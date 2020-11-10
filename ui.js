@@ -36,12 +36,14 @@ $(async function() {
 
     // call the login static method to build a user instance
     const userInstance = await User.login(username, password);
+   
     // set the global user to the user instance
-    let currentUser = userInstance;
+    currentUser = userInstance;
     // set token and username to localstorage
-    syncCurrentUserToLocalStorage();
+    syncCurrentUserToLocalStorage(currentUser);
     loginAndSubmitForm();
   });
+
 
   /**
    * Event listener for signing up.
@@ -58,8 +60,7 @@ $(async function() {
 
     // call the create method, which calls the API and then builds a new user instance
     const newUser = await User.create(username, password, name);
-    let currentUser = newUser;
-    syncCurrentUserToLocalStorage();
+    currentUser = newUser; //set global currentUser variable to newUser
     loginAndSubmitForm();
   });
 
@@ -110,10 +111,20 @@ $(async function() {
     //  to get an instance of User with the right details
     //  this is designed to run once, on page load
     let currentUser = await User.getLoggedInUser(token, username);
+    
     await generateStories();
 
     if (currentUser) {
       showNavForLoggedInUser();
+    }
+  }
+
+  /* sync current user information to localStorage */
+
+  function syncCurrentUserToLocalStorage() {
+    if (currentUser) {
+      localStorage.setItem("token", currentUser.loginToken);
+      localStorage.setItem("username", currentUser.username); 
     }
   }
 
@@ -136,6 +147,7 @@ $(async function() {
     // update the navigation bar to include favorites, submit, and user-stories
     showNavForLoggedInUser();
   }
+
 
   /**
    * A rendering function to call the StoryList.getStories static method,
@@ -189,8 +201,12 @@ $(async function() {
    */
 
   $(".articles-container").on("click", ".star", async function(evt) {
+    console.log("clicked on a star")
+    console.log("209", currentUser)
     if (currentUser) { // if logged in
-      const $tgt = $(evt.target); // star
+      console.log("logged in check!")
+      const $tgt = $(evt.target); // star 
+      console.log("tgt", $tgt)
       const $closestStoryLi = $tgt.closest("li"); // get the story li next to the star
       const storyId = $closestStoryLi.attr("id"); // get that story's Id
 
@@ -208,39 +224,45 @@ $(async function() {
     }
   });
 
+
   function showMyStories() {
-    $favoritedStories.empty()
-    $ownStories.empty() //clear existing ownStories list before populating updated ownStories list
-    if (currentUser.ownStories.length === 0) {
-      $ownStories.append("<h1> No stories yet </h1>");
-    } else {
-      // for each of the users stories
-      for (let story of currentUser.ownStories) {
-        // create the storie's HTML
-        let ownStoryHTML = generateStoryHTML(story);
-        // append each stories HTML to the $ownStories ul
-        $ownStories.prepend(ownStoryHTML);
+    if (currentUser) {
+      $favoritedStories.empty()
+      $ownStories.empty() //clear existing ownStories list before populating updated ownStories list
+      if (currentUser.ownStories.length === 0) {
+        $ownStories.append("<h1> No stories yet </h1>");
+      } else {
+        // for each of the users stories
+        for (let story of currentUser.ownStories) {
+          // create the storie's HTML
+          let ownStoryHTML = generateStoryHTML(story);
+          // append each stories HTML to the $ownStories ul
+          $ownStories.prepend(ownStoryHTML);
+        }
       }
+      $allStoriesList.hide()
+      generateStories()
+      $ownStories.show()
     }
-    $allStoriesList.hide()
-    generateStories()
-    $ownStories.show()
-    
+      
   }
   
   function showMyFavorites() {
-    // empty out existing list so we aren't compounding the list
-    $favoritedStories.empty();
+    checkIfLoggedIn()
+    if (currentUser) {
+      // empty out existing list so we aren't compounding the list
+      $favoritedStories.empty();
 
-    // if no stories have been favorited
-    if (currentUser.favorites.length === 0) {
-      $favoritedStories.append("<h5>No favorites yet!</h5>");
-    } else {
-      // for each story of the favorite Stories
-      for (let story of currentUser.favorites) {
-        // create HTML and add to DOM each story 
-        let favoriteStoryHTML = generateStoryHTML(story);
-        $favoritedStories.append(favoriteStoryHTML);
+      // if no stories have been favorited
+      if (currentUser.favorites.length === 0) {
+        $favoritedStories.append("<h5>No favorites yet!</h5>");
+      } else {
+        // for each story of the favorite Stories
+        for (let story of currentUser.favorites) {
+          // create HTML and add to DOM each story 
+          let favoriteStoryHTML = generateStoryHTML(story);
+          $favoritedStories.append(favoriteStoryHTML);
+        }
       }
     }
     
@@ -248,10 +270,12 @@ $(async function() {
 
   // check if story is one of the favorites
   function isFavorite(id) {
-    favoritesList = currentUser.favorites
-    favoriteIds = favoritesList.map(story => story.storyId)
-    return favoriteIds.includes(id) //returns true if storyId is one of the favorites
+    if (currentUser) {
+      favoritesList = currentUser.favorites
+      favoriteIds = favoritesList.map(story => story.storyId)
+      return favoriteIds.includes(id) //returns true if storyId is one of the favorites
     }
+  }
 
   /* hide all elements in elementsArr */
 
@@ -286,15 +310,6 @@ $(async function() {
       hostName = hostName.slice(4);
     }
     return hostName;
-  }
-
-  /* sync current user information to localStorage */
-
-  function syncCurrentUserToLocalStorage() {
-    if (currentUser) {
-      localStorage.setItem("token", currentUser.loginToken);
-      localStorage.setItem("username", currentUser.username);
-    }
   }
 
   // User submitting new story
@@ -340,9 +355,5 @@ $(async function() {
     showMyFavorites();
     $favoritedStories.show();
   })
-
-  
-
-
   
 });
