@@ -110,9 +110,10 @@ $(async function() {
     // if there is a token in localStorage, call User.getLoggedInUser
     //  to get an instance of User with the right details
     //  this is designed to run once, on page load
-    let currentUser = await User.getLoggedInUser(token, username);
+    currentUser = await User.getLoggedInUser(token, username);
     
     await generateStories();
+    console.log(currentUser)
 
     if (currentUser) {
       showNavForLoggedInUser();
@@ -248,23 +249,22 @@ $(async function() {
   }
   
   function showMyFavorites() {
-    checkIfLoggedIn()
-    if (currentUser) {
-      // empty out existing list so we aren't compounding the list
-      $favoritedStories.empty();
+    
+    // empty out existing list so we aren't compounding the list
+    $favoritedStories.empty();
 
-      // if no stories have been favorited
-      if (currentUser.favorites.length === 0) {
-        $favoritedStories.append("<h5>No favorites yet!</h5>");
-      } else {
-        // for each story of the favorite Stories
-        for (let story of currentUser.favorites) {
-          // create HTML and add to DOM each story 
-          let favoriteStoryHTML = generateStoryHTML(story);
-          $favoritedStories.append(favoriteStoryHTML);
-        }
+    // if no stories have been favorited
+    if (currentUser.favorites.length === 0) {
+      $favoritedStories.append("<h5>No favorites yet!</h5>");
+    } else {
+      // for each story of the favorite Stories
+      for (let story of currentUser.favorites) {
+        // create HTML and add to DOM each story 
+        let favoriteStoryHTML = generateStoryHTML(story);
+        $favoritedStories.append(favoriteStoryHTML);
       }
     }
+    
     
   }
 
