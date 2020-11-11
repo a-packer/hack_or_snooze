@@ -169,22 +169,68 @@ class User {
   }
 
   async addToFavorites(storyId) {
-    return await axios({
+    await axios({
       url: `${BASE_URL}/users/${this.username}/favorites/${storyId}`,
       method: "POST",
       data: {
         token: this.loginToken
       }
     })
+    let response = await axios.get(`${BASE_URL}/users/${this.username}`, {
+      params: {
+        token: this.loginToken
+      }     
+    });
+    // update all of the user's properties
+    this.name = response.data.user.name;
+    this.createdAt = response.data.user.createdAt;
+    this.updatedAt = response.data.user.updatedAt;
+
+    // convert the favorites and ownStories into instances of Story
+    this.favorites = response.data.user.favorites.map(s => new Story(s));
+    this.ownStories = response.data.user.stories.map(s => new Story(s));
+    
+    return this
   }
   async removeFromFavorites(storyId) {
-    return await axios({
+    await axios({
       url: `${BASE_URL}/users/${this.username}/favorites/${storyId}`,
       method: "DELETE",
       data: {
         token: this.loginToken
       }
     })
+    let response = await axios.get(`${BASE_URL}/users/${this.username}`, {
+      params: {
+        token: this.loginToken
+      }     
+    });
+    // update all of the user's properties
+    this.name = response.data.user.name;
+    this.createdAt = response.data.user.createdAt;
+    this.updatedAt = response.data.user.updatedAt;
+
+    // convert the favorites and ownStories into instances of Story
+    this.favorites = response.data.user.favorites.map(s => new Story(s));
+    this.ownStories = response.data.user.stories.map(s => new Story(s));
+    
+    return this
+  }
+  async removeStory(user, storyId) {
+    await axios({
+      url: `${BASE_URL}/stories/${storyId}`,
+      method: "DELETE",
+      data: {
+        token: user.loginToken
+      },
+    });
+
+    // remove story from stories
+    console.log(this)
+    this.stories = this.stories.filter(story => story.storyId !== storyId);
+
+    // remove story from user's own stories
+    user.ownStories = user.ownStories.filter(s => s.storyId !== storyId);
   }
 
 

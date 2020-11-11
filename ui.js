@@ -174,13 +174,25 @@ $(async function() {
    * A function to render HTML for an individual Story instance
    */
 
-  function generateStoryHTML(story) {
+  function generateStoryHTML(story, userStory) {
     let hostName = getHostName(story.url);
     let starType = isFavorite(story.storyId) ? "fas" : "far";
+    let trashCanIcon = "";
+
+    if (userStory) {
+      trashCanIcon =
+      `<span class="trash-can">
+      <i class="fas fa-trash-alt"></i>
+    </span>`
+    } else {
+      trashCanIcon = ""
+    }
+  
 
     // render story markup
     const storyMarkup = $(`
       <li id="${story.storyId}">
+        ${trashCanIcon}
         <span class="star">
           <i class="${starType} fa-star"></i>
         </span>
@@ -202,12 +214,8 @@ $(async function() {
    */
 
   $(".articles-container").on("click", ".star", async function(evt) {
-    console.log("clicked on a star")
-    console.log("209", currentUser)
     if (currentUser) { // if logged in
-      console.log("logged in check!")
-      const $tgt = $(evt.target); // star 
-      console.log("tgt", $tgt)
+      const $tgt = $(evt.target); // star \
       const $closestStoryLi = $tgt.closest("li"); // get the story li next to the star
       const storyId = $closestStoryLi.attr("id"); // get that story's Id
 
@@ -236,7 +244,7 @@ $(async function() {
         // for each of the users stories
         for (let story of currentUser.ownStories) {
           // create the storie's HTML
-          let ownStoryHTML = generateStoryHTML(story);
+          let ownStoryHTML = generateStoryHTML(story, true);
           // append each stories HTML to the $ownStories ul
           $ownStories.prepend(ownStoryHTML);
         }
@@ -333,6 +341,27 @@ $(async function() {
     });
 
 
+  // event handler for deleting user-made story  
+
+  $ownStories.on("click", ".trash-can", async function(evt) {
+    // get the Story's ID of story next to trash can user clicked on
+    const $closestLi = $(evt.target).closest("li");
+    const storyId = $closestLi.attr("id");
+
+    // remove the story from the API
+    await storyList.removeStory(currentUser, storyId);
+
+    // re-generate the story list
+    await generateStories();
+
+    // hide everyhing
+    hideElements();
+
+    // ...except the story list
+    $allStoriesList.show();
+  });
+
+
     $submitForm.slideToggle() // hide submit form
     generateStories() // re-load stories including new submitted story
     //clear form values
@@ -345,9 +374,9 @@ $(async function() {
   })
 
   $("#nav-my-stories").on("click", function() {
-      showMyStories();
-      $ownStories.show();
-      $submitForm.hide() // if submitForm is toggled down, hide when 
+    showMyStories();
+    $ownStories.show();
+    $submitForm.hide() // if submitForm is toggled down, hide when 
   })
 
   $("#nav-favorites").on("click", function() {
@@ -355,5 +384,20 @@ $(async function() {
     showMyFavorites();
     $favoritedStories.show();
   })
+
+  $("#nav-all").on("click", function() {
+    $ownStories.hide();
+    $favoritedStories.hide()
+    $allStoriesList.show()
+  })
+
+  
+  // function isOwnStory(story) {
+  //   if ($ownStories.includes(story)) {
+  //     return true
+  //   } else {
+  //     return false
+  //   }
+  // }
   
 });
